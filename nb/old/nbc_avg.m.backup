@@ -1,6 +1,3 @@
-% Ensure no conflicts
-clear;
-
 %% Gets data
 % Opens the Data Set File
 ds_fid = fopen('ds.txt');
@@ -34,7 +31,7 @@ for i = 1:size(int_data, 1)
     end
 end
 
-%% Begins LR
+%% Begins NBC
 
 % Perform 5 trials with random subsets
 
@@ -51,7 +48,7 @@ for trial = 1:5
         train_data = int_data(rnd_list(1:new_train_size), :);
         test_data = int_data(rnd_list(train_size+1:end), :);
 
-        num_attributes = size(int_data, 2)-2;
+        num_attributes = size(int_data, 2)-1;
         class_prediction = zeros(size(test_data, 1), 1);
 
         % Split training into positive and negative class arrays
@@ -62,7 +59,7 @@ for trial = 1:5
         for sample = 1:size(test_data,1)
             pos_prod = 1;
             neg_prod = 1;
-            for attr = 2:num_attributes+1
+            for attr = 2:num_attributes
                 pos_prod = pos_prod * (sum(pos_class(:, attr) == test_data(sample, attr))+1)/size(pos_class, 1);
                 neg_prod = neg_prod * (sum(neg_class(:, attr) == test_data(sample, attr))+1)/size(neg_class, 1);
             end

@@ -1,5 +1,7 @@
 % Ensure no conflicts
+clc;
 clear;
+
 
 %% Gets data
 % Opens the Data Set File
@@ -30,7 +32,7 @@ for i = 1:size(int_data, 1)
     if(int_data(i, end) == 2)
         int_data(i, end) = 1;
     else
-        int_data(i, end) = -1;
+        int_data(i, end) = 0;
     end
 end
 
@@ -38,14 +40,14 @@ end
 
 % Perform 5 trials with random subsets
 
-for trial = 1:5
+for trial = 1
     subsets = [.01 .02 .03 .125 .625 1];
     % Split data into train and test sets
     num_entries = size(int_data, 1);
     train_size = floor(2/3*num_entries);
     test_size = num_entries - train_size; 
     rnd_list = randperm(num_entries); 
-    for subset = 1:6
+    for subset = 6
         % 2/3 of data goes to training set and the other 1/3 to the test set
         new_train_size = floor(train_size*subsets(subset));
         train_data = int_data(rnd_list(1:new_train_size), :);
@@ -54,33 +56,30 @@ for trial = 1:5
         num_attributes = size(int_data, 2)-2;
         class_prediction = zeros(size(test_data, 1), 1);
 
-        % Split training into positive and negative class arrays
-        pos_class = train_data((train_data(:,end) == 1), :);
-        neg_class = train_data((train_data(:,end) == -1), :);
-
-        % Calculate Prob of What Class 
-        for sample = 1:size(test_data,1)
-            pos_prod = 1;
-            neg_prod = 1;
-            for attr = 2:num_attributes+1
-                pos_prod = pos_prod * (sum(pos_class(:, attr) == test_data(sample, attr))+1)/size(pos_class, 1);
-                neg_prod = neg_prod * (sum(neg_class(:, attr) == test_data(sample, attr))+1)/size(neg_class, 1);
+        weights = zeros(num_attributes, 1); 
+        y_labels = train_data(:,end); 
+        x_attrs = train_data(:,2:end-1); 
+        for iter = 1:100
+            p = zeros(size(train_data, 1), 1); 
+            for s = 1:size(train_data, 1)
+                p(s) = exp(weights'*x_attrs(s,:)')/(1+exp(weights'*x_attrs(s,:)'));
             end
-            pos_prod = pos_prod * size(pos_class, 1)/train_size; 
-            neg_prod = neg_prod * size(neg_class, 1)/train_size; 
-            if(pos_prod > neg_prod)
-                class_prediction(sample) = 1;
-            else
-                class_prediction(sample) = -1;
-            end    
+            W = zeros(size(train_data, 1));
+            for ij = 1:size(train_data, 1)
+                % Is this Right!?!?!?!?!?!?
+                W(ij, ij) = p(ij); 
+            end
+            old_weights = weights;
+            X = x_attrs;
+            z = X*weights + inv(W)*(y_labels - p);
+            weights = inv(X'*W*X)*X'*W*z;
+            diff(iter,:) = weights - old_weights;
         end
-
-        % Get accuracy Measure
-        score = class_prediction - test_data(:,end);
-        scores(trial, subset) = sum(score == 0);
+        
+        prob_pos = 1./(1+exp(-weights'*test_data(:,2:end-1)'));
+        results = prob_pos > 0.5;
+        score = results' == test_data(:,end);
+        sum(score)/size(test_data, 1)
     end
 end
 
-results = mean(scores, 1)/size(test_data, 1)
-figure 
-plot(subsets, results)
