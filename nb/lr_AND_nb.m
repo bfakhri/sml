@@ -137,6 +137,8 @@ for trial = 1:5
     rnd_list = randperm(num_entries); 
     for subset = 1:6
         % 2/3 of data goes to training set and the other 1/3 to the test set
+        clear train_data;
+        clear test_data;
         new_train_size = floor(train_size*subsets(subset));
         train_data = int_data(rnd_list(1:new_train_size), :);
         test_data = int_data(rnd_list(train_size+1:end), :);
